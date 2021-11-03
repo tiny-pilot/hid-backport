@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Run this script as root to compile the USB HID kernel module that includes
+# the patch for Mac OS X pre-boot compatibility.
+
+# Exit build script on first failure.
+set -e
+
+# Echo commands to stdout.
+set -x
+
+# Exit on unset variable.
+set -u
+
+# Clone repo.
+SOURCE_DIR="$(mktemp --directory)"
+pushd "${SOURCE_DIR}"
+git clone --depth=1 --branch rpi-5.10.y https://github.com/raspberrypi/linux .
+
+# Apply patch.
+curl https://github.com/raspberrypi/linux/commit/d7428bc26fc767942c38d74b80299bcd4f01e7cb.patch \
+  | git apply
+
+# Generate config.
+KERNEL=kernel7l
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- bcm2711_defconfig
+
+# Build module.
+OUTPUT_DIR="drivers/usb/gadget/function"
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_prepare
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- M="${OUTPUT_DIR}"
+
+popd
+cp "${SOURCE_DIR}/${OUTPUT_DIR}/usb_f_hid.ko" bin/
