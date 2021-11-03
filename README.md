@@ -24,3 +24,5 @@ sudo apt install \
 
 ./compile-module
 ```
+
+After the script completes, it will place the compiled module under `bin/usb_f_hid.ko`.
